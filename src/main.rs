@@ -10,6 +10,9 @@ fn main() {
             .read_line(&mut input)
             .expect("Failed to read input.");
         let input = input.trim();
+        if input == "exit" {
+            break;
+        }
         println!("{}: command not found", input);
     }
 }
