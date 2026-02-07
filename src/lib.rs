@@ -1,66 +1,9 @@
 use std::io::{self, Write};
 
-use crate::builtins::Builtin;
+use crate::command::{Command, CommandResult, CommandResultValue};
+
 mod builtins;
-
-enum CommandType {
-    Builtin(builtins::Builtin),
-    Other(String),
-}
-
-impl CommandType {
-    fn from_name(command_name: &String) -> CommandType {
-        match builtins::get_builtin(command_name) {
-            Some(builtin) => CommandType::Builtin(builtin),
-            None => CommandType::Other(command_name.to_string()),
-        }
-    }
-}
-
-enum CommandResultValue {
-    Exit,
-    Output(String),
-}
-
-struct CommandError {
-    pub reason: String,
-}
-
-type CommandResult = Result<Option<CommandResultValue>, CommandError>;
-
-pub struct Command {
-    command_type: CommandType,
-    args: Vec<String>,
-}
-
-impl Command {
-    fn from_string(input: &String) -> Option<Command> {
-        let input = input.trim();
-
-        let tokens: Vec<String> = input
-            .split(" ")
-            .map(|token| token.trim().to_string())
-            .collect();
-
-        let name = tokens.first()?;
-
-        Some(Command {
-            command_type: CommandType::from_name(name),
-            args: tokens[1..].to_vec(),
-        })
-    }
-
-    fn run(&self) -> CommandResult {
-        match &self.command_type {
-            CommandType::Builtin(Builtin::Exit) => builtins::exit(),
-            CommandType::Builtin(Builtin::Echo) => builtins::echo(&self.args),
-            CommandType::Builtin(Builtin::Type) => builtins::print_type(&self.args),
-            CommandType::Other(name) => Err(CommandError {
-                reason: format!("{}: command not found", name),
-            }),
-        }
-    }
-}
+mod command;
 
 pub struct Shell {
     prompt_sign: String,

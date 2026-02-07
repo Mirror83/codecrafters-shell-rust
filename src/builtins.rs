@@ -1,4 +1,4 @@
-use crate::{CommandError, CommandResult, CommandResultValue};
+use crate::command::{CommandError, CommandResult, CommandResultValue};
 
 pub enum Builtin {
     Echo,
