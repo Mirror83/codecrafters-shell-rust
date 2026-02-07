@@ -2,6 +2,7 @@ use std::io::{self, Write};
 
 enum CommandResultValue {
     Exit,
+    Output(String),
 }
 
 struct CommandError {
@@ -16,7 +17,7 @@ pub struct Shell {
 
 pub struct Command {
     name: String,
-    // args: Vec<String>,
+    args: Vec<String>,
 }
 
 impl Command {
@@ -34,13 +35,14 @@ impl Command {
 
         Some(Command {
             name: tokens[0].to_string(),
-            // args: tokens[1..].to_vec(),
+            args: tokens[1..].to_vec(),
         })
     }
 
     fn run(&self) -> CommandResult {
         match self.name.as_str() {
             "exit" => Ok(Some(CommandResultValue::Exit)),
+            "echo" => Ok(Some(CommandResultValue::Output(self.args.join(" ")))),
             other => Err(CommandError {
                 reason: format!("{}: command not found", other),
             }),
@@ -86,19 +88,16 @@ impl Shell {
 
     fn print(&self, result: &CommandResult) {
         match result {
-            Ok(_) => {}
+            Ok(Some(CommandResultValue::Output(text))) => println!("{}", text),
+            Ok(None) | Ok(Some(CommandResultValue::Exit)) => {}
             Err(err) => println!("{}", err.reason),
         }
     }
 
     fn should_exit(&self, result: &CommandResult) -> bool {
-        if let Ok(output) = result {
-            if let Some(value) = output {
-                match value {
-                    CommandResultValue::Exit => return true,
-                }
-            }
+        match result {
+            Ok(Some(CommandResultValue::Exit)) => true,
+            _ => false,
         }
-        return false;
     }
 }
