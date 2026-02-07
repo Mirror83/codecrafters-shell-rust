@@ -1,18 +1,5 @@
-#[allow(unused_imports)]
-use std::io::{self, Write};
+use codecrafters_shell;
 
 fn main() {
-    loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read input.");
-        let input = input.trim();
-        if input == "exit" {
-            break;
-        }
-        println!("{}: command not found", input);
-    }
+    codecrafters_shell::run();
 }
