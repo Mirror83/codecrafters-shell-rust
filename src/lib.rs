@@ -43,6 +43,27 @@ impl Command {
         match self.name.as_str() {
             "exit" => Ok(Some(CommandResultValue::Exit)),
             "echo" => Ok(Some(CommandResultValue::Output(self.args.join(" ")))),
+            "type" => {
+                println!("type: number of args {}", self.args.len());
+                let command_name = match self.args.first() {
+                    Some(command_name) => command_name,
+                    None => {
+                        return Err(CommandError {
+                            reason: "find: too many arguments, expected one".to_string(),
+                        });
+                    }
+                };
+
+                match command_name.as_str() {
+                    "exit" | "echo" | "type" => Ok(Some(CommandResultValue::Output(format!(
+                        "{} is a shell builtin",
+                        command_name
+                    )))),
+                    _ => Err(CommandError {
+                        reason: format!("{}: not found", command_name),
+                    }),
+                }
+            }
             other => Err(CommandError {
                 reason: format!("{}: command not found", other),
             }),
