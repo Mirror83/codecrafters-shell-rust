@@ -1,5 +1,22 @@
 use std::io::{self, Write};
 
+use crate::builtins::Builtin;
+mod builtins;
+
+enum CommandType {
+    Builtin(builtins::Builtin),
+    Other(String),
+}
+
+impl CommandType {
+    fn from_name(command_name: &String) -> CommandType {
+        match builtins::get_builtin(command_name) {
+            Some(builtin) => CommandType::Builtin(builtin),
+            None => CommandType::Other(command_name.to_string()),
+        }
+    }
+}
+
 enum CommandResultValue {
     Exit,
     Output(String),
@@ -11,12 +28,8 @@ struct CommandError {
 
 type CommandResult = Result<Option<CommandResultValue>, CommandError>;
 
-pub struct Shell {
-    prompt_sign: String,
-}
-
 pub struct Command {
-    name: String,
+    command_type: CommandType,
     args: Vec<String>,
 }
 
@@ -29,46 +42,28 @@ impl Command {
             .map(|token| token.trim().to_string())
             .collect();
 
-        if tokens.len() == 0 {
-            return None;
-        }
+        let name = tokens.first()?;
 
         Some(Command {
-            name: tokens[0].to_string(),
+            command_type: CommandType::from_name(name),
             args: tokens[1..].to_vec(),
         })
     }
 
     fn run(&self) -> CommandResult {
-        match self.name.as_str() {
-            "exit" => Ok(Some(CommandResultValue::Exit)),
-            "echo" => Ok(Some(CommandResultValue::Output(self.args.join(" ")))),
-            "type" => {
-                println!("type: number of args {}", self.args.len());
-                let command_name = match self.args.first() {
-                    Some(command_name) => command_name,
-                    None => {
-                        return Err(CommandError {
-                            reason: "find: too many arguments, expected one".to_string(),
-                        });
-                    }
-                };
-
-                match command_name.as_str() {
-                    "exit" | "echo" | "type" => Ok(Some(CommandResultValue::Output(format!(
-                        "{} is a shell builtin",
-                        command_name
-                    )))),
-                    _ => Err(CommandError {
-                        reason: format!("{}: not found", command_name),
-                    }),
-                }
-            }
-            other => Err(CommandError {
-                reason: format!("{}: command not found", other),
+        match &self.command_type {
+            CommandType::Builtin(Builtin::Exit) => builtins::exit(),
+            CommandType::Builtin(Builtin::Echo) => builtins::echo(&self.args),
+            CommandType::Builtin(Builtin::Type) => builtins::print_type(&self.args),
+            CommandType::Other(name) => Err(CommandError {
+                reason: format!("{}: command not found", name),
             }),
         }
     }
+}
+
+pub struct Shell {
+    prompt_sign: String,
 }
 
 impl Shell {
