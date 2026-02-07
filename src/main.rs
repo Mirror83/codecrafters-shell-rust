@@ -1,5 +1,6 @@
-use codecrafters_shell;
+use codecrafters_shell::Shell;
 
 fn main() {
-    codecrafters_shell::run();
+    let shell = Shell::new();
+    shell.run();
 }
