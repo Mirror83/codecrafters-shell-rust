@@ -32,7 +32,7 @@ pub fn print_type(args: &Vec<String>) -> CommandResult {
 
     match get_builtin(command_name) {
         Some(_) => Ok(Some(CommandResultValue::Output(format!(
-            "{} is a builtin command",
+            "{} is a shell builtin",
             command_name
         )))),
         None => Err(CommandError {
