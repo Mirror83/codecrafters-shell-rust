@@ -49,10 +49,16 @@ impl Shell {
         match result {
             Ok(Some(CommandResultValue::Output(text))) => println!("{}", text),
             Ok(Some(CommandResultValue::InPathOutput(output))) => {
-                match String::from_utf8(output.stdout.clone()) {
-                    Ok(stdout_text) => print!("{}", stdout_text),
-                    Err(err) => println!("Unable to print command output for: {:?}", err),
-                }
+                io::stdout()
+                    .write_all(&output.stdout)
+                    .unwrap_or_else(|err| {
+                        eprintln!("Unable to print command stdout output: {:?}", err)
+                    });
+                io::stderr()
+                    .write_all(&output.stderr)
+                    .unwrap_or_else(|err| {
+                        eprintln!("Unable to print command stderr output: {:?}", err)
+                    });
             }
             Ok(None) | Ok(Some(CommandResultValue::Exit)) => {}
             Err(err) => println!("{}", err.reason),

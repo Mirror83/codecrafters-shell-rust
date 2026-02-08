@@ -118,13 +118,10 @@ impl Command {
     }
 
     fn run_external_command(name: &str, path: &str, args: &Vec<String>) -> CommandResult {
-        println!("command name: {}", name);
-        println!("command path: {}", path);
-        println!("args: {:?}", args);
         match process::Command::new(path).args(args).output() {
             Ok(output) => Ok(Some(CommandResultValue::InPathOutput(output))),
             Err(err) => Err(CommandError {
-                reason: err.to_string(),
+                reason: format!("{} failed. {}", name, err.to_string()),
             }),
         }
     }
