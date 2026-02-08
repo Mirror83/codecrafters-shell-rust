@@ -69,7 +69,8 @@ fn command_is_in_directory(command_name: &str, entry: &DirEntry) -> bool {
 
 fn search_path(command_name: &str) -> Option<std::path::PathBuf> {
     let Ok(path) = std::env::var("PATH") else {
-        panic!("Could not get PATH environment variable values.")
+        eprintln!("Could not get PATH environment variable values.");
+        return None;
     };
     for directory in std::env::split_paths(&path) {
         match std::fs::read_dir(&directory) {
