@@ -117,8 +117,8 @@ impl Command {
         return None;
     }
 
-    fn run_external_command(name: &str, path: &str, args: &Vec<String>) -> CommandResult {
-        match process::Command::new(path).args(args).output() {
+    fn run_external_command(name: &str, _path: &str, args: &Vec<String>) -> CommandResult {
+        match process::Command::new(name).args(args).output() {
             Ok(output) => Ok(Some(CommandResultValue::InPathOutput(output))),
             Err(err) => Err(CommandError {
                 reason: format!("{} failed. {}", name, err.to_string()),
