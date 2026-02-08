@@ -1,35 +1,29 @@
 [![progress-banner](https://backend.codecrafters.io/progress/shell/3e8730d2-71f6-4301-92ef-5b33349a1435)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for Rust solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
-
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+This is my solution for the ["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
 
 **Note**: If you're viewing this repo on GitHub, head over to
 [codecrafters.io](https://codecrafters.io) to try the challenge.
 
-# Passing the first stage
+Currently, the code passes the tests for all of the base stages which outline a simple shell with:
 
-The entry point for your `shell` implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+- a REPL (Read-Evaluate-Print Loop)
+- three built-in commands (echo, exit and type)
+  - `echo` prints out the arguments provided to it, separated by spaces
+  - `exit` closes the shell
+  - `type` checks whether a command is a built-in command or a command that can be found
+    from the directories in the `PATH` environment variable
+- the ability to execute programs discoverable through `PATH` and print the outputs from these programs
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
+# Structure
 
-Time to move on to the next stage!
+`src/command.rs` - Parses input and then run based with
+`src/builtins.rs` - Implements the built-in commands
+`src/lib.rs` - Brings in `command` and `built-in` and implements the `REPL` within a `Shell` struct
 
-# Stage 2 & beyond
+# External crates
 
-Note: This section is for stages 2 and beyond.
+- [is_executable](https://crates.io/crates/is_executable) - For checking whether files in `PATH` directories are executable or not
 
-1. Ensure you have `cargo (1.92)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+There are more crates in the `Cargo.toml` file (anyhow, bytes and thiserror),
+but these came with the default files and I've not directly used them.
