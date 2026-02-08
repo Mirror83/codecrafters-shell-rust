@@ -1,3 +1,6 @@
+use is_executable;
+use std::{fs, path};
+
 use crate::builtins::{self, Builtin};
 
 pub enum CommandResultValue {
@@ -13,14 +16,20 @@ pub type CommandResult = Result<Option<CommandResultValue>, CommandError>;
 
 pub enum CommandType {
     Builtin(Builtin),
-    Other(String),
+    InPath(String, path::PathBuf),
+    Invalid(String),
 }
 
 impl CommandType {
-    fn from_name(command_name: &String) -> CommandType {
+    pub fn from_name(command_name: &String) -> CommandType {
         match builtins::get_builtin(command_name) {
             Some(builtin) => CommandType::Builtin(builtin),
-            None => CommandType::Other(command_name.to_string()),
+            None => {
+                if let Some(command_path) = Command::search_path(command_name) {
+                    return CommandType::InPath(command_name.to_string(), command_path);
+                }
+                return CommandType::Invalid(command_name.to_string());
+            }
         }
     }
 }
@@ -52,9 +61,61 @@ impl Command {
             CommandType::Builtin(Builtin::Exit) => builtins::exit(),
             CommandType::Builtin(Builtin::Echo) => builtins::echo(&self.args),
             CommandType::Builtin(Builtin::Type) => builtins::print_type(&self.args),
-            CommandType::Other(name) => Err(CommandError {
+            CommandType::InPath(name, _) => Command::run_external_command(name, &self.args),
+            CommandType::Invalid(name) => Err(CommandError {
                 reason: format!("{}: command not found", name),
             }),
         }
+    }
+
+    fn command_is_in_directory(command_name: &str, entry: &fs::DirEntry) -> bool {
+        let entry_path = entry.path();
+        let Ok(metadata) = entry.metadata() else {
+            return false;
+        };
+        if metadata.is_file()
+            && (entry_path.file_name().unwrap() == command_name
+                || entry_path.file_stem().unwrap() == command_name)
+            && is_executable::is_executable(&entry_path)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    fn search_path(command_name: &str) -> Option<path::PathBuf> {
+        let Ok(path) = std::env::var("PATH") else {
+            eprintln!("Could not get PATH environment variable values.");
+            return None;
+        };
+        for directory in std::env::split_paths(&path) {
+            match std::fs::read_dir(&directory) {
+                Ok(mut read_dir) => {
+                    let Some(Ok(command_dir_entry)) =
+                        read_dir.find(|entry_result| match entry_result {
+                            Ok(entry) => Command::command_is_in_directory(command_name, entry),
+                            Err(_) => false,
+                        })
+                    else {
+                        continue;
+                    };
+                    let command_path = command_dir_entry.path();
+                    return Some(command_path);
+                }
+                Err(_) => {
+                    continue;
+                }
+            }
+        }
+        return None;
+    }
+
+    fn run_external_command(name: &String, args: &Vec<String>) -> CommandResult {
+        println!("command name: {}", name);
+        println!("args: {:?}", args);
+        Err(CommandError {
+            reason: "Unable to run command".to_string(),
+        })
     }
 }
