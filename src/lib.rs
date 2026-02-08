@@ -48,6 +48,12 @@ impl Shell {
     fn print(&self, result: &CommandResult) {
         match result {
             Ok(Some(CommandResultValue::Output(text))) => println!("{}", text),
+            Ok(Some(CommandResultValue::InPathOutput(output))) => {
+                match String::from_utf8(output.stdout.clone()) {
+                    Ok(stdout_text) => print!("{}", stdout_text),
+                    Err(err) => println!("Unable to print command output for: {:?}", err),
+                }
+            }
             Ok(None) | Ok(Some(CommandResultValue::Exit)) => {}
             Err(err) => println!("{}", err.reason),
         }

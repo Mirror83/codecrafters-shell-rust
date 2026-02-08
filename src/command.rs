@@ -1,10 +1,14 @@
 use is_executable;
-use std::{fs, path};
+use std::{
+    fs, path,
+    process::{self},
+};
 
 use crate::builtins::{self, Builtin};
 
 pub enum CommandResultValue {
     Exit,
+    InPathOutput(process::Output),
     Output(String),
 }
 
@@ -61,7 +65,9 @@ impl Command {
             CommandType::Builtin(Builtin::Exit) => builtins::exit(),
             CommandType::Builtin(Builtin::Echo) => builtins::echo(&self.args),
             CommandType::Builtin(Builtin::Type) => builtins::print_type(&self.args),
-            CommandType::InPath(name, _) => Command::run_external_command(name, &self.args),
+            CommandType::InPath(name, path) => {
+                Command::run_external_command(name, path.to_str().unwrap(), &self.args)
+            }
             CommandType::Invalid(name) => Err(CommandError {
                 reason: format!("{}: command not found", name),
             }),
@@ -111,11 +117,15 @@ impl Command {
         return None;
     }
 
-    fn run_external_command(name: &String, args: &Vec<String>) -> CommandResult {
+    fn run_external_command(name: &str, path: &str, args: &Vec<String>) -> CommandResult {
         println!("command name: {}", name);
+        println!("command path: {}", path);
         println!("args: {:?}", args);
-        Err(CommandError {
-            reason: "Unable to run command".to_string(),
-        })
+        match process::Command::new(path).args(args).output() {
+            Ok(output) => Ok(Some(CommandResultValue::InPathOutput(output))),
+            Err(err) => Err(CommandError {
+                reason: err.to_string(),
+            }),
+        }
     }
 }
